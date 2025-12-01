@@ -1,12 +1,12 @@
 import 'dart:io';
 
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:flutter_local_notifications_platform_interface/src/darwin_flutter_local_notifications_plugin.dart';
 import 'package:flutter_native_timezone/flutter_native_timezone.dart';
 import 'package:timezone/data/latest_all.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 
 import '../domain/entities/task_entity.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 class NotificationService {
   NotificationService._internal();
@@ -44,7 +44,7 @@ class NotificationService {
     await init();
     if (Platform.isAndroid) return;
     await _plugin
-        .resolvePlatformSpecificImplementation<DarwinFlutterLocalNotificationsPlugin>()
+        .resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>()
         ?.requestPermissions(alert: true, badge: true, sound: true);
   }
 
