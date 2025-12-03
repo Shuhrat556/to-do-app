@@ -1,4 +1,3 @@
-import 'package:contribution_heatmap/contribution_heatmap.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -35,9 +34,11 @@ class _TaskHomePageState extends State<TaskHomePage> {
         actions: [
           IconButton(
             tooltip: 'Toggle sort direction',
-            icon: Icon(context.watch<TaskStore>().ascending
-                ? Icons.arrow_upward
-                : Icons.arrow_downward),
+            icon: Icon(
+              context.watch<TaskStore>().ascending
+                  ? Icons.arrow_upward
+                  : Icons.arrow_downward,
+            ),
             onPressed: context.read<TaskStore>().toggleSortDirection,
           ),
         ],
@@ -198,10 +199,7 @@ class _StatusCell extends StatelessWidget {
             children: [
               Text(
                 label,
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: Colors.white70,
-                ),
+                style: const TextStyle(fontSize: 12, color: Colors.white70),
               ),
               const SizedBox(height: 4),
               Text(
@@ -220,102 +218,6 @@ class _StatusCell extends StatelessWidget {
   }
 }
 
-class _HeatmapPanel extends StatelessWidget {
-  final TaskStore store;
-
-  const _HeatmapPanel({required this.store});
-
-  @override
-  Widget build(BuildContext context) {
-    final now = DateTime.now();
-    final minDate = DateTime(now.year, 1, 1);
-    final maxDate = DateTime(now.year, now.month, now.day);
-    final entries = store.contributionEntries
-        .where((entry) => entry.date.year == now.year)
-        .toList();
-    if (entries.isEmpty) {
-      entries.add(ContributionEntry(now, 0));
-    }
-
-    return Card(
-      color: Colors.white.withOpacity(0.95),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      elevation: 3,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.calendar_month, color: Colors.indigo),
-                const SizedBox(width: 8),
-                Text(
-                  'Joriy yil holati',
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleSmall
-                      ?.copyWith(fontWeight: FontWeight.w600),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            _buildHeatmapScroll(context, entries, minDate, maxDate),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHeatmapScroll(
-    BuildContext context,
-    List<ContributionEntry> entries,
-    DateTime minDate,
-    DateTime maxDate,
-  ) {
-    const cellSize = 14.0;
-    const cellSpacing = 2.0;
-    const columnEstimate = 56;
-    final estimatedWidth = columnEstimate * (cellSize + cellSpacing);
-    return SizedBox(
-      height: 200,
-      child: ScrollConfiguration(
-        behavior: const _NoGlowScrollBehavior(),
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: SizedBox(
-            width: estimatedWidth,
-            child: ContributionHeatmap(
-              entries: entries,
-              minDate: minDate,
-              maxDate: maxDate,
-              heatmapColor: HeatmapColor.indigo,
-              cellSize: cellSize,
-              cellSpacing: cellSpacing,
-              cellRadius: 4,
-              padding: EdgeInsets.zero,
-              showWeekdayLabels: false,
-              splittedMonthView: false,
-              monthTextStyle: const TextStyle(
-                fontSize: 11,
-                color: Colors.black54,
-                letterSpacing: 0.3,
-              ),
-              weekdayTextStyle: const TextStyle(
-                fontSize: 10,
-                color: Colors.black38,
-              ),
-              onCellTap: (date, value) =>
-                  _showHeatmapDetails(context, store, date, value),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-
 class _TaskOverview extends StatelessWidget {
   const _TaskOverview();
 
@@ -329,10 +231,6 @@ class _TaskOverview extends StatelessWidget {
         SliverPadding(
           padding: const EdgeInsets.only(top: 12),
           sliver: SliverToBoxAdapter(child: _StatsPanel(store: store)),
-        ),
-        SliverPadding(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          sliver: SliverToBoxAdapter(child: _HeatmapPanel(store: store)),
         ),
         SliverPadding(
           padding: const EdgeInsets.only(bottom: 12),
@@ -373,9 +271,7 @@ class _TaskOverview extends StatelessWidget {
                   onSelected: (_) => store.updateFilter(filter),
                   selectedColor: Colors.indigo.shade400,
                   backgroundColor: Colors.grey.shade200,
-                  labelStyle: const TextStyle(
-                    color: Colors.black87,
-                  ),
+                  labelStyle: const TextStyle(color: Colors.black87),
                 );
               }).toList(),
             ),
@@ -398,21 +294,13 @@ class _TaskOverview extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 8),
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Eslatma tovushini yoqing'),
-              subtitle: const Text('Muddat tugagach signal chiqsin'),
-              value: store.useAlarmTone,
-              onChanged: store.updateReminderStyle,
-            ),
           ],
         ),
       ),
     );
   }
 
-   _buildTaskListSliver(TaskStore store) {
+  _buildTaskListSliver(TaskStore store) {
     if (store.isLoading) {
       return SliverFillRemaining(
         hasScrollBody: false,
@@ -448,16 +336,13 @@ class _TaskOverview extends StatelessWidget {
     return SliverPadding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       sliver: SliverList(
-        delegate: SliverChildBuilderDelegate(
-          (context, index) {
-            final task = store.visibleTasks[index];
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: _buildTaskCard(context, store, task),
-            );
-          },
-          childCount: store.visibleTasks.length,
-        ),
+        delegate: SliverChildBuilderDelegate((context, index) {
+          final task = store.visibleTasks[index];
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: _buildTaskCard(context, store, task),
+          );
+        }, childCount: store.visibleTasks.length),
       ),
     );
   }
@@ -515,15 +400,15 @@ class _TaskOverview extends StatelessWidget {
             title: Text(
               task.title,
               style: TextStyle(
-                decoration:
-                    task.isCompleted ? TextDecoration.lineThrough : null,
+                decoration: task.isCompleted
+                    ? TextDecoration.lineThrough
+                    : null,
               ),
             ),
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (task.description != null &&
-                    task.description!.isNotEmpty)
+                if (task.description != null && task.description!.isNotEmpty)
                   Text(task.description!),
                 const SizedBox(height: 4),
                 Wrap(
@@ -531,13 +416,11 @@ class _TaskOverview extends StatelessWidget {
                   runSpacing: 4,
                   children: [
                     Chip(
-                      label: Text(task.isCompleted
-                          ? 'Bajarilgan'
-                          : 'Kutilmoqda'),
+                      label: Text(
+                        task.isCompleted ? 'Bajarilgan' : 'Kutilmoqda',
+                      ),
                       avatar: Icon(
-                        task.isCompleted
-                            ? Icons.check_circle
-                            : Icons.timelapse,
+                        task.isCompleted ? Icons.check_circle : Icons.timelapse,
                         size: 18,
                         color: Colors.white,
                       ),
@@ -563,9 +446,7 @@ class _TaskOverview extends StatelessWidget {
                       ),
                     if (category != null)
                       Chip(
-                        avatar: CircleAvatar(
-                          backgroundColor: category.color,
-                        ),
+                        avatar: CircleAvatar(backgroundColor: category.color),
                         label: Text(category.name),
                       ),
                     Chip(
@@ -592,8 +473,7 @@ class _TaskOverview extends StatelessWidget {
                         const SizedBox(height: 4),
                         Text(
                           task.remainingDurationLabel,
-                          style:
-                              Theme.of(context).textTheme.bodySmall,
+                          style: Theme.of(context).textTheme.bodySmall,
                         ),
                       ],
                     ),
@@ -604,9 +484,7 @@ class _TaskOverview extends StatelessWidget {
               icon: const Icon(Icons.edit),
               onPressed: () => _showTaskForm(context, task: task),
             ),
-            onTap: () => context
-                .read<TaskStore>()
-                .toggleCompletion(task.id),
+            onTap: () => context.read<TaskStore>().toggleCompletion(task.id),
           ),
         ),
       ),
@@ -614,22 +492,12 @@ class _TaskOverview extends StatelessWidget {
   }
 }
 
-class _NoGlowScrollBehavior extends ScrollBehavior {
-  const _NoGlowScrollBehavior();
-
-  @override
-  Widget buildOverscrollIndicator(
-      BuildContext context, Widget child, ScrollableDetails details) {
-    return child;
-  }
-}
-
-
 Future<void> _showTaskForm(BuildContext context, {Task? task}) async {
   final store = context.read<TaskStore>();
   final titleController = TextEditingController(text: task?.title ?? '');
-  final descriptionController =
-      TextEditingController(text: task?.description ?? '');
+  final descriptionController = TextEditingController(
+    text: task?.description ?? '',
+  );
   TaskPriority priority = task?.priority ?? TaskPriority.medium;
   DateTime? dueDate = task?.dueDate;
   String? selectedCategory = task?.categoryId;
@@ -665,9 +533,7 @@ Future<void> _showTaskForm(BuildContext context, {Task? task}) async {
                 const SizedBox(height: 8),
                 TextField(
                   controller: titleController,
-                  decoration: const InputDecoration(
-                    labelText: 'Sarlavha',
-                  ),
+                  decoration: const InputDecoration(labelText: 'Sarlavha'),
                 ),
                 const SizedBox(height: 8),
                 TextField(
@@ -748,15 +614,15 @@ Future<void> _showTaskForm(BuildContext context, {Task? task}) async {
                   trailing: IconButton(
                     icon: const Icon(Icons.edit_calendar),
                     onPressed: () async {
-                      final date = await _pickDate(context, dueDate);
-                      if (date == null) return;
-                      setState(() => dueDate = date);
+                      final dateTime = await _pickDueDateTime(context, dueDate);
+                      if (dateTime == null) return;
+                      setState(() => dueDate = dateTime);
                     },
                   ),
                   onTap: () async {
-                    final date = await _pickDate(context, dueDate);
-                    if (date == null) return;
-                    setState(() => dueDate = date);
+                    final dateTime = await _pickDueDateTime(context, dueDate);
+                    if (dateTime == null) return;
+                    setState(() => dueDate = dateTime);
                   },
                 ),
                 if (dueDate != null)
@@ -776,7 +642,8 @@ Future<void> _showTaskForm(BuildContext context, {Task? task}) async {
                     final now = DateTime.now();
                     final parsedInterval =
                         int.tryParse(intervalController.text) ?? 1;
-                    final recurrenceInterval = recurrenceType == RecurrenceType.interval
+                    final recurrenceInterval =
+                        recurrenceType == RecurrenceType.interval
                         ? parsedInterval.clamp(1, 365)
                         : 1;
                     if (task == null) {
@@ -809,8 +676,9 @@ Future<void> _showTaskForm(BuildContext context, {Task? task}) async {
                     }
                     navigator.pop();
                   },
-                  child:
-                      Text(task == null ? 'Saqlash' : 'O‘zgarishlarni saqlash'),
+                  child: Text(
+                    task == null ? 'Saqlash' : 'O‘zgarishlarni saqlash',
+                  ),
                 ),
                 const SizedBox(height: 24),
               ],
@@ -822,7 +690,10 @@ Future<void> _showTaskForm(BuildContext context, {Task? task}) async {
   );
 }
 
-Future<DateTime?> _pickDate(BuildContext context, DateTime? current) async {
+Future<DateTime?> _pickDueDateTime(
+  BuildContext context,
+  DateTime? current,
+) async {
   final date = await showDatePicker(
     context: context,
     initialDate: current ?? DateTime.now(),
@@ -830,99 +701,12 @@ Future<DateTime?> _pickDate(BuildContext context, DateTime? current) async {
     lastDate: DateTime.now().add(const Duration(days: 365 * 2)),
   );
   if (date == null) return current;
-  final baseHour = current?.hour ?? 9;
-  final baseMinute = current?.minute ?? 0;
-  return DateTime(
-    date.year,
-    date.month,
-    date.day,
-    baseHour,
-    baseMinute,
+  if (!context.mounted) return current;
+  final initialTime = TimeOfDay(
+    hour: current?.hour ?? 9,
+    minute: current?.minute ?? 0,
   );
-}
-
-Future<void> _showHeatmapDetails(
-  BuildContext context,
-  TaskStore store,
-  DateTime date,
-  int value,
-) async {
-  final tasks = store.completedTasksForDate(date);
-  final dateLabel = '${date.day.toString().padLeft(2, '0')}.'
-      '${date.month.toString().padLeft(2, '0')}.'
-      '${date.year}';
-  await showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-    ),
-    builder: (context) {
-      final listHeight = tasks.isEmpty
-          ? 120.0
-          : (tasks.length * 64.0).clamp(120.0, 320.0);
-      final header = value > 0
-          ? '$value ta vazifa bajarildi'
-          : 'Bu kunda vazifa bajarilmadi';
-      return Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-          left: 16,
-          right: 16,
-          top: 24,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              'Sana: $dateLabel',
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              header,
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 16),
-            if (tasks.isEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                child: Text(
-                  'Bu kunda hali bajarilgan vazifa yo‘q.',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              )
-            else
-              SizedBox(
-                height: listHeight,
-                child: ListView.separated(
-                  shrinkWrap: true,
-                  physics: const BouncingScrollPhysics(),
-                  itemCount: tasks.length,
-                  separatorBuilder: (_, __) => const Divider(),
-                  itemBuilder: (context, index) {
-                    final task = tasks[index];
-                    return ListTile(
-                      leading: CircleAvatar(
-                        backgroundColor: Colors.green.shade600,
-                        child: const Icon(Icons.check, color: Colors.white),
-                      ),
-                      title: Text(task.title),
-                      subtitle: Text(task.updatedAt.format()),
-                      trailing: Text(
-                        task.priority.label,
-                        style: TextStyle(color: task.priority.color),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            const SizedBox(height: 16),
-          ],
-        ),
-      );
-    },
-  );
+  final time = await showTimePicker(context: context, initialTime: initialTime);
+  if (time == null) return current;
+  return DateTime(date.year, date.month, date.day, time.hour, time.minute);
 }

@@ -1,0 +1,307 @@
+import 'package:contribution_heatmap/contribution_heatmap.dart';
+import 'package:flutter/material.dart';
+
+import '../domain/entities/task_entity.dart';
+import '../store/task_store.dart';
+
+class HeatmapPanel extends StatelessWidget {
+  final TaskStore store;
+
+  const HeatmapPanel({super.key, required this.store});
+
+  @override
+  Widget build(BuildContext context) {
+    final now = DateTime.now();
+    final minDate = DateTime(now.year, 1, 1);
+    final maxDate = DateTime(now.year, now.month, now.day);
+    final entries = store.contributionEntries
+        .where((entry) => entry.date.year == now.year)
+        .toList();
+    if (entries.isEmpty) {
+      entries.add(ContributionEntry(now, 0));
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFF7F9FF), Color(0xFFE6EDFF)],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.indigo.shade900.withOpacity(0.18),
+            offset: const Offset(0, 15),
+            blurRadius: 24,
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: Material(
+          color: Colors.transparent,
+          child: Padding(
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Colors.indigo.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.calendar_month,
+                        color: Colors.indigo,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Joriy yil holati',
+                            style: Theme.of(context).textTheme.titleSmall
+                                ?.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                          Text(
+                            '${now.year} yil davomida bajarilgan vazifalar',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Spacer(),
+                    Chip(
+                      label: Text(
+                        now.year.toString(),
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                      backgroundColor: Colors.indigo.shade50,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Har bir yulduz siz bajarilgan vazifalarni anglatadi. '
+                  'Ustun ustiga bosib, shu kungi tafsilotlarni ko‘ring.',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Colors.black.withOpacity(0.65),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Container(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(18),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.indigo.shade900.withOpacity(0.08),
+                        blurRadius: 18,
+                        offset: const Offset(0, 10),
+                      ),
+                    ],
+                  ),
+                  child: _buildHeatmapScroll(
+                    context,
+                    entries,
+                    minDate,
+                    maxDate,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: const [
+                    LegendCircle(color: Colors.indigo, label: 'Bajarilgan'),
+                    LegendCircle(color: Colors.indigoAccent, label: 'Kam'),
+                    LegendCircle(color: Color(0xFFB3C5FF), label: 'Hech'),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeatmapScroll(
+    BuildContext context,
+    List<ContributionEntry> entries,
+    DateTime minDate,
+    DateTime maxDate,
+  ) {
+    const cellSize = 14.0;
+    const cellSpacing = 2.0;
+    const columnEstimate = 56;
+    final estimatedWidth = columnEstimate * (cellSize + cellSpacing);
+    return SizedBox(
+      height: 200,
+      child: ScrollConfiguration(
+        behavior: const _NoGlowScrollBehavior(),
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: SizedBox(
+            width: estimatedWidth,
+            child: ContributionHeatmap(
+              entries: entries,
+              minDate: minDate,
+              maxDate: maxDate,
+              heatmapColor: HeatmapColor.indigo,
+              cellSize: cellSize,
+              cellSpacing: cellSpacing,
+              cellRadius: 4,
+              padding: EdgeInsets.zero,
+              showWeekdayLabels: false,
+              splittedMonthView: false,
+              monthTextStyle: const TextStyle(
+                fontSize: 11,
+                color: Colors.black54,
+                letterSpacing: 0.3,
+              ),
+              weekdayTextStyle: const TextStyle(
+                fontSize: 10,
+                color: Colors.black38,
+              ),
+              onCellTap: (date, value) =>
+                  _showHeatmapDetails(context, store, date, value),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class LegendCircle extends StatelessWidget {
+  final Color color;
+  final String label;
+
+  const LegendCircle({super.key, required this.color, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          width: 12,
+          height: 12,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+            border: Border.all(color: Colors.white, width: 1.2),
+          ),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          label,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 11),
+        ),
+      ],
+    );
+  }
+}
+
+Future<void> _showHeatmapDetails(
+  BuildContext context,
+  TaskStore store,
+  DateTime date,
+  int value,
+) async {
+  final logs = store.completionLogsForDate(date);
+  final dateLabel =
+      '${date.day.toString().padLeft(2, '0')}.'
+      '${date.month.toString().padLeft(2, '0')}.'
+      '${date.year}';
+  await showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+    ),
+    builder: (context) {
+      final listHeight = logs.isEmpty
+          ? 120.0
+          : (logs.length * 64.0).clamp(120.0, 320.0);
+      final header = value > 0
+          ? '$value ta vazifa bajarildi'
+          : 'Bu kunda vazifa bajarilmadi';
+      return Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+          left: 16,
+          right: 16,
+          top: 24,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Sana: $dateLabel',
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
+            const SizedBox(height: 8),
+            Text(header, style: Theme.of(context).textTheme.bodyMedium),
+            const SizedBox(height: 16),
+            if (logs.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Text(
+                  'Bu kunda hali bajarilgan vazifa yo‘q.',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              )
+            else
+              SizedBox(
+                height: listHeight,
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  physics: const BouncingScrollPhysics(),
+                  itemCount: logs.length,
+                  separatorBuilder: (_, __) => const Divider(),
+                  itemBuilder: (context, index) {
+                    final log = logs[index];
+                    return ListTile(
+                      leading: CircleAvatar(
+                        backgroundColor: Colors.green.shade600,
+                        child: const Icon(Icons.check, color: Colors.white),
+                      ),
+                      title: Text(log.title),
+                      subtitle: Text(log.completedAt.format()),
+                      trailing: Text(
+                        log.priority.label,
+                        style: TextStyle(color: log.priority.color),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            const SizedBox(height: 16),
+          ],
+        ),
+      );
+    },
+  );
+}
+
+class _NoGlowScrollBehavior extends ScrollBehavior {
+  const _NoGlowScrollBehavior();
+
+  @override
+  Widget buildOverscrollIndicator(
+    BuildContext context,
+    Widget child,
+    ScrollableDetails details,
+  ) {
+    return child;
+  }
+}

@@ -1,10 +1,13 @@
 import 'package:contribution_heatmap/contribution_heatmap.dart';
 import 'package:flutter/material.dart';
 
+import '../domain/entities/completion_log.dart';
 import '../domain/entities/task_entity.dart';
 import '../domain/usecases/create_task.dart';
 import '../domain/usecases/delete_task.dart';
+import '../domain/usecases/get_completion_logs.dart';
 import '../domain/usecases/get_tasks.dart';
+import '../domain/usecases/log_task_completion.dart';
 import '../domain/usecases/update_task.dart';
 import '../services/notification_service.dart';
 
@@ -13,12 +16,16 @@ class TaskStore extends ChangeNotifier {
   final CreateTask createTaskUseCase;
   final UpdateTask updateTaskUseCase;
   final DeleteTask deleteTaskUseCase;
+  final GetCompletionLogs getCompletionLogsUseCase;
+  final LogTaskCompletion logTaskCompletionUseCase;
 
   TaskStore({
     required this.getTasksUseCase,
     required this.createTaskUseCase,
     required this.updateTaskUseCase,
     required this.deleteTaskUseCase,
+    required this.getCompletionLogsUseCase,
+    required this.logTaskCompletionUseCase,
   }) {
     _initialize();
   }
@@ -30,21 +37,9 @@ class TaskStore extends ChangeNotifier {
   );
 
   final List<Category> _categories = const [
-    Category(
-      id: 'personal',
-      name: 'Shaxsiy',
-      colorValue: 0xFF42A5F5,
-    ),
-    Category(
-      id: 'work',
-      name: 'Ish',
-      colorValue: 0xFF9C27B0,
-    ),
-    Category(
-      id: 'learning',
-      name: 'O‘rganish',
-      colorValue: 0xFF26A69A,
-    ),
+    Category(id: 'personal', name: 'Shaxsiy', colorValue: 0xFF42A5F5),
+    Category(id: 'work', name: 'Ish', colorValue: 0xFF9C27B0),
+    Category(id: 'learning', name: 'O‘rganish', colorValue: 0xFF26A69A),
   ];
 
   final List<Task> _tasks = [];
@@ -55,6 +50,7 @@ class TaskStore extends ChangeNotifier {
   bool _ascending = true;
   bool _useAlarmTone = true;
   final NotificationService _notificationService = NotificationService.instance;
+  final List<CompletionLog> _completionLogs = [];
 
   List<Category> get categories => List.unmodifiable(_categories);
   TaskDisplayFilter get activeFilter => _activeFilter;
@@ -63,8 +59,7 @@ class TaskStore extends ChangeNotifier {
   bool get useAlarmTone => _useAlarmTone;
   bool get isLoading => _isLoading;
   int get totalTaskCount => _tasks.length;
-  int get completedCount =>
-      _tasks.where((task) => task.isCompleted).length;
+  int get completedCount => _tasks.where((task) => task.isCompleted).length;
   int get pendingCount => totalTaskCount - completedCount;
   double get completionRate =>
       totalTaskCount == 0 ? 0 : completedCount / totalTaskCount;
@@ -114,8 +109,9 @@ class TaskStore extends ChangeNotifier {
       late int result;
       switch (_sortMode) {
         case TaskSort.dueDate:
-          result = (a.dueDate ?? DateTime(2100))
-              .compareTo(b.dueDate ?? DateTime(2100));
+          result = (a.dueDate ?? DateTime(2100)).compareTo(
+            b.dueDate ?? DateTime(2100),
+          );
           break;
         case TaskSort.createdAt:
           result = a.createdAt.compareTo(b.createdAt);
@@ -130,12 +126,15 @@ class TaskStore extends ChangeNotifier {
     return base;
   }
 
+  List<CompletionLog> get completionLogs => List.unmodifiable(_completionLogs);
+
   Future<void> _initialize() async {
     await _loadTasks();
     if (_tasks.isEmpty) {
       await _seedTasks();
       await _loadTasks();
     }
+    await _loadCompletionLogs();
   }
 
   Future<void> _loadTasks() async {
@@ -146,6 +145,15 @@ class TaskStore extends ChangeNotifier {
       ..clear()
       ..addAll(tasks);
     _isLoading = false;
+    notifyListeners();
+  }
+
+  Future<void> _loadCompletionLogs() async {
+    final logs = await getCompletionLogsUseCase.call();
+    _completionLogs
+      ..clear()
+      ..addAll(logs);
+    _completionLogs.sort((a, b) => a.completedAt.compareTo(b.completedAt));
     notifyListeners();
   }
 
@@ -210,8 +218,13 @@ class TaskStore extends ChangeNotifier {
     await updateTaskUseCase.call(task);
     final index = _tasks.indexWhere((element) => element.id == task.id);
     if (index == -1) return;
+    final current = _tasks[index];
+    final shouldLogCompletion = !current.isCompleted && task.isCompleted;
     _tasks[index] = task;
     await _syncNotification(task);
+    if (shouldLogCompletion) {
+      await _recordTaskCompletion(task);
+    }
     notifyListeners();
   }
 
@@ -234,6 +247,7 @@ class TaskStore extends ChangeNotifier {
     _tasks[index] = updated;
     if (updated.isCompleted) {
       await _notificationService.cancelNotification(id);
+      await _recordTaskCompletion(updated);
     } else {
       await _syncNotification(updated);
     }
@@ -242,20 +256,20 @@ class TaskStore extends ChangeNotifier {
 
   Map<DateTime, int> get _completionCounts {
     final counts = <DateTime, int>{};
-    for (final task in _tasks) {
-      if (!task.isCompleted) continue;
-      final day = _startOfDay(task.updatedAt);
+    for (final log in _completionLogs) {
+      final day = _startOfDay(log.completedAt);
       counts.update(day, (value) => value + 1, ifAbsent: () => 1);
     }
     return counts;
   }
 
-  List<Task> completedTasksForDate(DateTime date) {
+  List<CompletionLog> completionLogsForDate(DateTime date) {
     final day = _startOfDay(date);
-    return _tasks
-        .where((task) => task.isCompleted)
-        .where((task) => _startOfDay(task.updatedAt) == day)
+    final logs = _completionLogs
+        .where((log) => _startOfDay(log.completedAt) == day)
         .toList();
+    logs.sort((a, b) => a.completedAt.compareTo(b.completedAt));
+    return logs;
   }
 
   DateTime _startOfDay(DateTime date) {
@@ -270,6 +284,17 @@ class TaskStore extends ChangeNotifier {
       task,
       playSound: useAlarmTone,
     );
+  }
+
+  Future<void> _recordTaskCompletion(Task task) async {
+    final log = CompletionLog(
+      taskId: task.id,
+      title: task.title,
+      priority: task.priority,
+      completedAt: task.updatedAt,
+    );
+    await logTaskCompletionUseCase.call(log);
+    _completionLogs.add(log);
   }
 
   void updateSearch(String value) {
@@ -298,9 +323,10 @@ class TaskStore extends ChangeNotifier {
     notifyListeners();
   }
 
-  Category categoryById(String id) =>
-      _categories.firstWhere((category) => category.id == id,
-          orElse: () => _unknownCategory);
+  Category categoryById(String id) => _categories.firstWhere(
+    (category) => category.id == id,
+    orElse: () => _unknownCategory,
+  );
 }
 
 enum TaskDisplayFilter { all, active, completed, today, overdue }
