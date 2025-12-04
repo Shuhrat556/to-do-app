@@ -130,10 +130,6 @@ class TaskStore extends ChangeNotifier {
 
   Future<void> _initialize() async {
     await _loadTasks();
-    if (_tasks.isEmpty) {
-      await _seedTasks();
-      await _loadTasks();
-    }
     await _loadCompletionLogs();
   }
 
@@ -155,56 +151,6 @@ class TaskStore extends ChangeNotifier {
       ..addAll(logs);
     _completionLogs.sort((a, b) => a.completedAt.compareTo(b.completedAt));
     notifyListeners();
-  }
-
-  Future<void> _seedTasks() async {
-    final now = DateTime.now();
-    final initial = [
-      Task(
-        id: 'task_1',
-        title: 'Uyni tozalash',
-        description: 'Xonalarni supurish va kir yuvish',
-        dueDate: now.add(const Duration(hours: 6)),
-        isCompleted: false,
-        categoryId: 'personal',
-        priority: TaskPriority.low,
-        createdAt: now.subtract(const Duration(days: 1)),
-        updatedAt: now.subtract(const Duration(days: 1)),
-        recurrenceType: RecurrenceType.none,
-        recurrenceIntervalDays: 1,
-      ),
-      Task(
-        id: 'task_2',
-        title: 'Jurnalga maqola yozish',
-        description: 'Flutter arxitekturasi haqida',
-        dueDate: now.add(const Duration(days: 1, hours: 2)),
-        isCompleted: false,
-        categoryId: 'learning',
-        priority: TaskPriority.medium,
-        createdAt: now.subtract(const Duration(hours: 10)),
-        updatedAt: now.subtract(const Duration(hours: 10)),
-        recurrenceType: RecurrenceType.daily,
-        recurrenceIntervalDays: 1,
-      ),
-      Task(
-        id: 'task_3',
-        title: 'Buyurtmani yuborish',
-        description:
-            'Design fayllarni mijozga elektron pochta orqali jo‘natish',
-        dueDate: now.subtract(const Duration(hours: 2)),
-        isCompleted: false,
-        categoryId: 'work',
-        priority: TaskPriority.high,
-        createdAt: now.subtract(const Duration(days: 2)),
-        updatedAt: now.subtract(const Duration(days: 1)),
-        recurrenceType: RecurrenceType.interval,
-        recurrenceIntervalDays: 3,
-      ),
-    ];
-
-    for (final task in initial) {
-      await createTaskUseCase.call(task);
-    }
   }
 
   Future<void> addTask(Task task) async {
@@ -331,34 +277,12 @@ class TaskStore extends ChangeNotifier {
 
 enum TaskDisplayFilter { all, active, completed, today, overdue }
 
-extension TaskDisplayFilterLabel on TaskDisplayFilter {
-  String get label {
-    switch (this) {
-      case TaskDisplayFilter.all:
-        return 'Hammasi';
-      case TaskDisplayFilter.active:
-        return 'Faol';
-      case TaskDisplayFilter.completed:
-        return 'Bajarilgan';
-      case TaskDisplayFilter.today:
-        return 'Bugun';
-      case TaskDisplayFilter.overdue:
-        return 'Vazif (o‘tgan)';
-    }
-  }
+extension TaskDisplayFilterInfo on TaskDisplayFilter {
+  String get translationKey => 'filter_$name';
 }
 
 enum TaskSort { dueDate, createdAt, priority }
 
-extension TaskSortLabel on TaskSort {
-  String get label {
-    switch (this) {
-      case TaskSort.dueDate:
-        return 'Muddat';
-      case TaskSort.createdAt:
-        return 'Yaratilgan vaqti';
-      case TaskSort.priority:
-        return 'Ustuvorlik';
-    }
-  }
+extension TaskSortInfo on TaskSort {
+  String get translationKey => 'sort_$name';
 }

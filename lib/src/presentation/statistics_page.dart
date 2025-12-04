@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../store/language_notifier.dart';
 import '../store/task_store.dart';
 import 'heatmap_panel.dart';
 
@@ -10,13 +11,13 @@ class StatisticsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final store = context.watch<TaskStore>();
+    final t = context.watch<LanguageNotifier>().translate;
     return Scaffold(
       backgroundColor: Colors.transparent,
-      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text('Statistika'),
-        elevation: 0,
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.indigo.shade900,
+        elevation: 4,
+        title: Text(t('statistics_title')),
       ),
       body: Container(
         decoration: BoxDecoration(
@@ -39,7 +40,7 @@ class StatisticsPage extends StatelessWidget {
               children: [
                 const SizedBox(height: 8),
                 Text(
-                  'Joriy yil davomida bajarilgan vazifalaringizni kuzatib boring.',
+                  t('statistics_description'),
                   style: Theme.of(
                     context,
                   ).textTheme.bodyMedium?.copyWith(color: Colors.white70),
@@ -48,7 +49,7 @@ class StatisticsPage extends StatelessWidget {
                 HeatmapPanel(store: store),
                 const SizedBox(height: 16),
                 Text(
-                  'Yulduzlar har bir vazifa natijasida to‘planadi; ustun ustiga bosib batafsil ko‘rishingiz mumkin.',
+                  t('statistics_hint'),
                   style: Theme.of(
                     context,
                   ).textTheme.bodySmall?.copyWith(color: Colors.white60),

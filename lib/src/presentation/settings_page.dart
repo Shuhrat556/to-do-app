@@ -16,11 +16,10 @@ class SettingsPage extends StatelessWidget {
     final t = language.translate;
     return Scaffold(
       backgroundColor: Colors.transparent,
-      extendBodyBehindAppBar: true,
       appBar: AppBar(
+        backgroundColor: Colors.indigo.shade900,
+        elevation: 4,
         title: Text(t('settings_title')),
-        elevation: 0,
-        backgroundColor: Colors.transparent,
       ),
       body: Container(
         decoration: BoxDecoration(
@@ -92,19 +91,18 @@ class SettingsPage extends StatelessWidget {
                   ).textTheme.bodySmall?.copyWith(color: Colors.white70),
                 ),
                 const SizedBox(height: 12),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 6,
-                  children: AppLanguage.values.map((lang) {
-                    final selected = language.current == lang;
-                    return ChoiceChip(
-                      label: Text(lang.displayName),
-                      selected: selected,
-                      onSelected: (_) => language.setLanguage(lang),
-                      selectedColor: Colors.indigo.shade100,
-                      backgroundColor: Colors.white.withOpacity(0.08),
-                    );
-                  }).toList(),
+                FilledButton.tonal(
+                  onPressed: () =>
+                      _showLanguageSelection(context, language, t),
+                  child: Text(t('language_section_button')),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  language.current.displayName,
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.copyWith(color: Colors.white70),
                 ),
               ],
             ),
@@ -238,7 +236,7 @@ Future<void> _showLockSetupDialog(
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Bekor qilish'),
+                child: Text(t('dialog_cancel')),
               ),
               ElevatedButton(
                 onPressed: () async {
@@ -311,7 +309,7 @@ Future<void> _showLockDisableDialog(
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Bekor qilish'),
+                child: Text(t('dialog_cancel')),
               ),
               ElevatedButton(
                 onPressed: () async {
@@ -332,6 +330,51 @@ Future<void> _showLockDisableDialog(
             ],
           );
         },
+      );
+    },
+  );
+}
+
+Future<void> _showLanguageSelection(
+  BuildContext context,
+  LanguageNotifier language,
+  String Function(String, [Map<String, String>?]) t,
+) async {
+  await showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+    ),
+    builder: (context) {
+      return SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Text(
+                t('language_section_title'),
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+            ),
+            ...AppLanguage.values.map(
+              (lang) {
+                return RadioListTile<AppLanguage>(
+                  value: lang,
+                  groupValue: language.current,
+                  title: Text(lang.displayName),
+                  onChanged: (_) async {
+                    await language.setLanguage(lang);
+                    if (!context.mounted) return;
+                    Navigator.of(context).pop();
+                  },
+                );
+              },
+            ),
+            const SizedBox(height: 12),
+          ],
+        ),
       );
     },
   );

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../store/language_notifier.dart';
 import '../store/lock_notifier.dart';
 
 class LockGate extends StatefulWidget {
@@ -74,10 +75,11 @@ class _LockScreenOverlayState extends State<_LockScreenOverlay> {
   }
 
   Future<void> _submit() async {
+    final t = context.read<LanguageNotifier>().translate;
     final notifier = context.read<LockNotifier>();
     final password = _controller.text.trim();
     if (password.isEmpty) {
-      setState(() => _error = 'Parolni kiriting');
+      setState(() => _error = t('lock_error_empty'));
       return;
     }
     setState(() {
@@ -88,7 +90,7 @@ class _LockScreenOverlayState extends State<_LockScreenOverlay> {
     if (!mounted) return;
     setState(() => _loading = false);
     if (!success) {
-      setState(() => _error = 'Parol noto‘g‘ri');
+      setState(() => _error = t('lock_error_invalid'));
     } else {
       _controller.clear();
     }
@@ -96,6 +98,7 @@ class _LockScreenOverlayState extends State<_LockScreenOverlay> {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.watch<LanguageNotifier>().translate;
     return Container(
       color: Colors.black,
       child: Center(
@@ -111,12 +114,12 @@ class _LockScreenOverlayState extends State<_LockScreenOverlay> {
                 const Icon(Icons.lock_outline, size: 48, color: Colors.indigo),
                 const SizedBox(height: 12),
                 Text(
-                  'Parolni kiriting',
+                  t('lock_prompt_title'),
                   style: Theme.of(context).textTheme.headlineSmall,
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Ilovangizni himoya qilish uchun parolni kiriting.',
+                  t('lock_prompt_description'),
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
@@ -125,7 +128,7 @@ class _LockScreenOverlayState extends State<_LockScreenOverlay> {
                   controller: _controller,
                   obscureText: true,
                   decoration: InputDecoration(
-                    hintText: 'Parol',
+                    hintText: t('lock_field_hint'),
                     errorText: _error,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -144,7 +147,7 @@ class _LockScreenOverlayState extends State<_LockScreenOverlay> {
                             width: 18,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : const Text('Kirish'),
+                        : Text(t('lock_login_button')),
                   ),
                 ),
               ],

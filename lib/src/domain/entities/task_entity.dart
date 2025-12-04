@@ -3,16 +3,7 @@ import 'package:flutter/material.dart';
 enum RecurrenceType { none, daily, interval }
 
 extension RecurrenceTypeInfo on RecurrenceType {
-  String get label {
-    switch (this) {
-      case RecurrenceType.none:
-        return 'Bir martalik';
-      case RecurrenceType.daily:
-        return 'Har kuni';
-      case RecurrenceType.interval:
-        return 'Har g‘un';
-    }
-  }
+  String get translationKey => 'recurrence_$name';
 }
 
 class Task {
@@ -70,9 +61,6 @@ class Task {
     );
   }
 
-  String get dueDateLabel =>
-      dueDate != null ? dueDate!.format() : 'Muddat belgilanmagan';
-
   Duration get remainingDuration =>
       dueDate?.difference(DateTime.now()) ?? Duration.zero;
 
@@ -84,48 +72,13 @@ class Task {
     return (remainingSeconds / totalDuration).clamp(0, 1).toDouble();
   }
 
-  String get remainingDurationLabel {
-    if (dueDate == null) return '';
-    final remaining = remainingDuration;
-    if (remaining.isNegative) {
-      return 'Vaqt tugagan';
-    }
-    final hours = remaining.inHours;
-    final minutes = remaining.inMinutes % 60;
-    if (hours > 0) {
-      return '$hours soat $minutes daqiq qoldi';
-    }
-    if (minutes > 0) {
-      return '$minutes daqiq qoldi';
-    }
-    return 'Vaqt yaqin';
-  }
-
-  String get recurrenceLabel {
-    switch (recurrenceType) {
-      case RecurrenceType.none:
-        return 'Takrorlanmaydi';
-      case RecurrenceType.daily:
-        return 'Har kuni takrorlanadi';
-      case RecurrenceType.interval:
-        return 'Har $recurrenceIntervalDays kunda takrorlanadi';
-    }
-  }
+  // Strings are handled in the presentation layer to keep the domain layer agnostic.
 }
 
 enum TaskPriority { low, medium, high }
 
 extension TaskPriorityInfo on TaskPriority {
-  String get label {
-    switch (this) {
-      case TaskPriority.low:
-        return 'Kam';
-      case TaskPriority.medium:
-        return 'O‘rtacha';
-      case TaskPriority.high:
-        return 'Yuqori';
-    }
-  }
+  String get translationKey => 'task_priority_$name';
 
   Color get color {
     switch (this) {

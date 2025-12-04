@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 
 import '../injection/injection_container.dart';
@@ -22,13 +23,32 @@ class ToDoProApp extends StatelessWidget {
           create: (_) => sl<LanguageNotifier>(),
         ),
       ],
-      child: MaterialApp.router(
-        debugShowCheckedModeBanner: false,
-        title: 'ToDo Pro',
-        themeMode: ThemeMode.system,
+      child: Consumer<LanguageNotifier>(
+        builder: (context, language, _) => MaterialApp.router(
+          locale: language.locale,
+          supportedLocales: language.supportedLocales,
+          localizationsDelegates: const [
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          debugShowCheckedModeBanner: false,
+          title: 'ToDo Pro',
+          themeMode: ThemeMode.system,
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
           useMaterial3: true,
+          appBarTheme: AppBarTheme(
+            backgroundColor: Colors.indigo.shade900,
+            elevation: 4,
+            centerTitle: true,
+            titleTextStyle: const TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+            ),
+            iconTheme: const IconThemeData(color: Colors.white),
+          ),
         ),
         darkTheme: ThemeData(
           colorScheme: ColorScheme.fromSeed(
@@ -36,9 +56,22 @@ class ToDoProApp extends StatelessWidget {
             brightness: Brightness.dark,
           ),
           useMaterial3: true,
+          appBarTheme: AppBarTheme(
+            backgroundColor: Colors.indigo.shade900,
+            elevation: 4,
+            centerTitle: true,
+            titleTextStyle: const TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+            ),
+            iconTheme: const IconThemeData(color: Colors.white),
+          ),
         ),
-        builder: (context, child) => LockGate(child: child ?? const SizedBox()),
-        routerConfig: appRouter,
+          builder: (context, child) =>
+              LockGate(child: child ?? const SizedBox()),
+          routerConfig: appRouter,
+        ),
       ),
     );
   }

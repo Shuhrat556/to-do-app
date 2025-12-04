@@ -1,7 +1,9 @@
 import 'package:contribution_heatmap/contribution_heatmap.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../domain/entities/task_entity.dart';
+import '../store/language_notifier.dart';
 import '../store/task_store.dart';
 
 class HeatmapPanel extends StatelessWidget {
@@ -20,6 +22,7 @@ class HeatmapPanel extends StatelessWidget {
     if (entries.isEmpty) {
       entries.add(ContributionEntry(now, 0));
     }
+    final t = context.watch<LanguageNotifier>().translate;
 
     return Container(
       decoration: BoxDecoration(
@@ -65,12 +68,12 @@ class HeatmapPanel extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Joriy yil holati',
+                            t('heatmap_panel_title'),
                             style: Theme.of(context).textTheme.titleSmall
                                 ?.copyWith(fontWeight: FontWeight.bold),
                           ),
                           Text(
-                            '${now.year} yil davomida bajarilgan vazifalar',
+                            t('heatmap_panel_subtitle'),
                             style: Theme.of(context).textTheme.bodySmall,
                           ),
                         ],
@@ -88,8 +91,7 @@ class HeatmapPanel extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'Har bir yulduz siz bajarilgan vazifalarni anglatadi. '
-                  'Ustun ustiga bosib, shu kungi tafsilotlarni ko‘ring.',
+                  t('heatmap_description'),
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: Colors.black.withOpacity(0.65),
                   ),
@@ -113,15 +115,16 @@ class HeatmapPanel extends StatelessWidget {
                     entries,
                     minDate,
                     maxDate,
+                    t,
                   ),
                 ),
                 const SizedBox(height: 10),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: const [
-                    LegendCircle(color: Colors.indigo, label: 'Bajarilgan'),
-                    LegendCircle(color: Colors.indigoAccent, label: 'Kam'),
-                    LegendCircle(color: Color(0xFFB3C5FF), label: 'Hech'),
+                  children: [
+                    LegendCircle(color: Colors.indigo, label: t('legend_completed')),
+                    LegendCircle(color: Colors.indigoAccent, label: t('legend_few')),
+                    LegendCircle(color: const Color(0xFFB3C5FF), label: t('legend_none')),
                   ],
                 ),
               ],
@@ -137,6 +140,7 @@ class HeatmapPanel extends StatelessWidget {
     List<ContributionEntry> entries,
     DateTime minDate,
     DateTime maxDate,
+    String Function(String, [Map<String, String>?]) t,
   ) {
     const cellSize = 14.0;
     const cellSpacing = 2.0;
@@ -171,7 +175,7 @@ class HeatmapPanel extends StatelessWidget {
                 color: Colors.black38,
               ),
               onCellTap: (date, value) =>
-                  _showHeatmapDetails(context, store, date, value),
+                  _showHeatmapDetails(context, store, date, value, t),
             ),
           ),
         ),
@@ -214,6 +218,7 @@ Future<void> _showHeatmapDetails(
   TaskStore store,
   DateTime date,
   int value,
+  String Function(String, [Map<String, String>?]) t,
 ) async {
   final logs = store.completionLogsForDate(date);
   final dateLabel =
@@ -231,8 +236,8 @@ Future<void> _showHeatmapDetails(
           ? 120.0
           : (logs.length * 64.0).clamp(120.0, 320.0);
       final header = value > 0
-          ? '$value ta vazifa bajarildi'
-          : 'Bu kunda vazifa bajarilmadi';
+          ? t('heatmap_details_header', {'count': value.toString()})
+          : t('heatmap_details_empty');
       return Padding(
         padding: EdgeInsets.only(
           bottom: MediaQuery.of(context).viewInsets.bottom,
@@ -245,7 +250,7 @@ Future<void> _showHeatmapDetails(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              'Sana: $dateLabel',
+              t('heatmap_details_date', {'date': dateLabel}),
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: 8),
@@ -255,7 +260,7 @@ Future<void> _showHeatmapDetails(
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 child: Text(
-                  'Bu kunda hali bajarilgan vazifa yo‘q.',
+                  t('heatmap_details_empty'),
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
@@ -278,7 +283,7 @@ Future<void> _showHeatmapDetails(
                       title: Text(log.title),
                       subtitle: Text(log.completedAt.format()),
                       trailing: Text(
-                        log.priority.label,
+                        t(log.priority.translationKey),
                         style: TextStyle(color: log.priority.color),
                       ),
                     );
